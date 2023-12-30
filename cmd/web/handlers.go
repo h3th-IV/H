@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,7 +13,27 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	fmt.Fprintf(w, "Welcome to HootHUb, a Secure and Private Chat room")
+
+	// Use the template.ParseFiles() function to read the template(html)
+	//file into a template set
+
+	files := []string{
+		"./ui/html/base.tmpl",
+		"./ui/html/pages/home.tmpl.html",
+	}
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	err = ts.Execute(w, nil)
+	if err != nil {
+		log.Println(err.Error())
+		http.Error(w, "", http.StatusInternalServerError)
+	}
+
 }
 
 func viewHoot(w http.ResponseWriter, r *http.Request) {
