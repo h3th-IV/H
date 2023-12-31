@@ -5,6 +5,8 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 )
 
@@ -19,19 +21,21 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 	files := []string{
 		"./ui/html/base.tmpl",
-		"./ui/html/pages/home.tmpl.html",
+		"./ui/html/partials/nav.tmpl",
+		"./ui/html/pages/home.tmpl",
 	}
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, "", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-
-	err = ts.Execute(w, nil)
+	// Use the ExecuteTemplate() method to write the content of the "base"
+	// template as the response body.
+	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
 		log.Println(err.Error())
-		http.Error(w, "", http.StatusInternalServerError)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 
 }
@@ -42,7 +46,7 @@ func viewHoot(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 		return
 	}
-	fmt.Fprintf(w, "hoot with id: %v", id)
+	fmt.Fprintf(w, "snippet with id: %v", id)
 }
 
 func createHoot(w http.ResponseWriter, r *http.Request) {
@@ -51,5 +55,14 @@ func createHoot(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	fmt.Fprintf(w, "New hoot created")
+	fmt.Fprintf(w, "New snip created")
+}
+func directoryHandler(w http.ResponseWriter, r *http.Request) {
+	path := filepath.Join("ui", "static", r.URL.Path)
+
+	fi, err := os.Stat(path)
+	if fi.IsDir() && err == nil {
+		path = filepath.Join(path, "index.html")
+	}
+	http.ServeFile(w, r, path)
 }
