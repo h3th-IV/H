@@ -14,26 +14,26 @@ type neuteredFileSystem struct {
 }
 
 func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
-	file, err := nfs.fs.Open(path)
+	httpFile, err := nfs.fs.Open(path)
 	if err != nil {
 		return nil, err
 	}
 
 	//get file info
-	neuter, err := file.Stat()
+	neuter, _ := httpFile.Stat()
 	//check if file is a directory
 	if neuter.IsDir() {
 		//if path is directory join index.html to path
-		index := filepath.Join(path, "/../index.html")
+		index := filepath.Join(path, "index.html")
 		if _, err := nfs.fs.Open(index); err != nil {
-			closeErr := file.Close()
+			closeErr := httpFile.Close()
 			if closeErr != nil {
 				return nil, closeErr
 			}
 			return nil, err
 		}
 	}
-	return file, nil
+	return httpFile, nil
 }
 func main() {
 	router := mux.NewRouter()
@@ -41,7 +41,7 @@ func main() {
 	fileserver := http.FileServer(neuteredFileSystem{fs: http.Dir("./ui/static/")})
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileserver))
 
-	router.HandleFunc("/", homeHandler)
+	router.Handle("/", &home{})
 	router.HandleFunc("/H/create", createHoot)
 	router.HandleFunc("/H/view", viewHoot)
 

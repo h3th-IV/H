@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 	"strconv"
 )
+//just for theory create struct that satifies ServeHTTP and pass it as the Handler
+type home struct{}
 
-func homeHandler(w http.ResponseWriter, r *http.Request) {
+func (h *home) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
