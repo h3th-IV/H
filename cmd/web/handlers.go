@@ -3,16 +3,13 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strconv"
 )
-//just for theory create struct that satifies ServeHTTP and pass it as the Handler
-type home struct{}
 
-func (h *home) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// just for theory create struct that satifies ServeHTTP and pass it as the Handler
+
+func (hb *hootBox) home(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
 		return
@@ -28,43 +25,42 @@ func (h *home) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	ts, err := template.ParseFiles(files...)
 	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		hb.serverErr(w, err)
 		return
 	}
 	// Use the ExecuteTemplate() method to write the content of the "base"
 	// template as the response body.
 	err = ts.ExecuteTemplate(w, "base", nil)
 	if err != nil {
-		log.Println(err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		hb.serverErr(w, err)
 	}
 
 }
 
-func viewHoot(w http.ResponseWriter, r *http.Request) {
+func (hb *hootBox) viewHoot(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 	if err != nil || id < 1 {
-		log.Fatal(err)
+		hb.notFoundErr(w)
 		return
 	}
 	fmt.Fprintf(w, "snippet with id: %v", id)
 }
 
-func createHoot(w http.ResponseWriter, r *http.Request) {
+func (hb *hootBox) createHoot(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.Header().Set("Allow", http.MethodPost)
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		hb.clientErr(w, http.StatusMethodNotAllowed)
 		return
 	}
 	fmt.Fprintf(w, "New snip created")
 }
-func directoryHandler(w http.ResponseWriter, r *http.Request) {
-	path := filepath.Join("ui", "static", r.URL.Path)
 
-	fi, err := os.Stat(path)
-	if fi.IsDir() && err == nil {
-		path = filepath.Join(path, "index.html")
-	}
-	http.ServeFile(w, r, path)
-}
+// func directoryHandler(w http.ResponseWriter, r *http.Request) {
+// 	path := filepath.Join("ui", "static", r.URL.Path)
+
+// 	fi, err := os.Stat(path)
+// 	if fi.IsDir() && err == nil {
+// 		path = filepath.Join(path, "index.html")
+// 	}
+// 	http.ServeFile(w, r, path)
+// }
