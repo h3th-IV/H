@@ -5,40 +5,17 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
-)
 
-type neuteredFileSystem struct {
-	fs http.FileSystem
-}
+	"github.com/h3th-IV/H/internal/models"
+	"github.com/joho/godotenv"
+)
 
 type hootBox struct {
 	infolog *log.Logger
 	errlog  *log.Logger
+	dataBox *models.HootsModel
 }
 
-func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
-	httpFile, err := nfs.fs.Open(path)
-	if err != nil {
-		return nil, err
-	}
-
-	//get file info
-	neuter, _ := httpFile.Stat()
-	//check if file is a directory
-	if neuter.IsDir() {
-		//if path is directory join index.html to path
-		index := filepath.Join(path, "index.html")
-		if _, err := nfs.fs.Open(index); err != nil {
-			closeErr := httpFile.Close()
-			if closeErr != nil {
-				return nil, closeErr
-			}
-			return nil, err
-		}
-	}
-	return httpFile, nil
-}
 func main() {
 	//logger for wrting informational message
 	InfoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -50,6 +27,16 @@ func main() {
 		infolog: InfoLog,
 		errlog:  ErrorLog,
 	}
+	err := godotenv.Load()
+	if err != nil {
+		ErrorLog.Printf("Error loading Environment variables: %v", err)
+	}
+	dB, err := owl.Init()
+	if err != nil {
+		ErrorLog.Printf("%v", err)
+	}
+	defer dB.CloseDB()
+
 	//define a cli flag with default addr and help message
 	addr := flag.String("addr", ":8000", "http network addr(port)")
 	// This reads in the command-line flag value and assigns it to the addr
