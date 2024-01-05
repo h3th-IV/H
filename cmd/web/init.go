@@ -3,13 +3,13 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/h3th-IV/H/internal/models"
 )
 
-func (hb *hootBox) Init() (*hootBox, error) {
+func Init() (*sql.DB, error) {
 	connStr := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", os.Getenv("MY_USER"), os.Getenv("MY_PASSWORD"), os.Getenv("MY_HOST"), os.Getenv("MY_PORT"), os.Getenv("MY_DBNAME"))
 
 	dataBase, err := sql.Open("mysql", connStr)
@@ -21,15 +21,12 @@ func (hb *hootBox) Init() (*hootBox, error) {
 		dataBase.Close()
 		return nil, fmt.Errorf("err connecting to db: %v", err)
 	}
-	dB := models.HootsModel{
-		DB: dataBase,
-	}
-	hb.infolog.Printf("Connected to database Successfully\n")
+
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+
+	infoLog.Printf("connected to dataBase succefully!")
 	//pass the database object to hootBox
-	hootDB := hootBox{
-		dataBox: &dB,
-	}
-	return &hootDB, nil
+	return dataBase, nil
 }
 
 func (hb *hootBox) CloseDB() error {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"runtime/debug"
@@ -25,4 +26,10 @@ func (hb *hootBox) clientErr(w http.ResponseWriter, status int) {
 // 404-like responses  to user
 func (hb *hootBox) notFoundErr(w http.ResponseWriter) {
 	hb.clientErr(w, http.StatusNotFound)
+}
+
+func tests() error {
+	Tra := sql.Tx{}
+	Tra.Commit()
+	return nil
 }

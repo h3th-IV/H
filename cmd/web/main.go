@@ -23,19 +23,21 @@ func main() {
 	//logger for writing error related messages
 	ErrorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 
-	owl := &hootBox{
-		infolog: InfoLog,
-		errlog:  ErrorLog,
-	}
 	err := godotenv.Load()
 	if err != nil {
 		ErrorLog.Printf("Error loading Environment variables: %v", err)
 	}
-	dB, err := owl.Init()
+	dB, err := Init()
 	if err != nil {
 		ErrorLog.Printf("%v", err)
 	}
-	defer dB.CloseDB()
+	owl := &hootBox{
+		infolog: InfoLog,
+		errlog:  ErrorLog,
+		dataBox: &models.HootsModel{DB: dB},
+	}
+
+	defer owl.dataBox.DB.Close()
 
 	//define a cli flag with default addr and help message
 	addr := flag.String("addr", ":8000", "http network addr(port)")
