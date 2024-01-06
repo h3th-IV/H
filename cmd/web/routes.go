@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/gorilla/mux"
+	"github.com/justinas/alice"
 )
 
 type neuteredFileSystem struct {
@@ -37,13 +38,18 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 func (hb *hootBox) routes() *mux.Router {
 	//create new router
 	router := mux.NewRouter()
+
 	//serve static files
 	fileserver := http.FileServer(neuteredFileSystem{fs: http.Dir("./ui/static/")})
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileserver))
 
 	router.HandleFunc("/", hb.home)
-	router.HandleFunc("/{path:[Hh]}/create", hb.createHoot)
-	router.HandleFunc("/{path:[Hh]}/view", hb.viewHoot)
+	router.HandleFunc("/{path:[Hh]}/create", hb.createHoot).Methods(http.MethodGet)
+	router.HandleFunc("/{path: [Hh]}/create", hb.postHoot).Methods(http.MethodPost)
+	router.HandleFunc("/{path:[Hh]}/view/{id:[0-9]+}", hb.viewHoot).Methods(http.MethodGet)
 
+	//set the middlewares chained togeter with alice
+	middlewareChain := alice.New(hb.recoverPanic, hb.requestLogger, secureHaedersMW)
+	router.Use(middlewareChain.Then)
 	return router
 }

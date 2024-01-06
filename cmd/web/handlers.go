@@ -12,12 +12,8 @@ import (
 )
 
 // just for theory create struct that satifies ServeHTTP and pass it as the Handler
-
+// ghostmac#6861
 func (hb *hootBox) home(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
-		hb.notFoundErr(w)
-		return
-	}
 
 	hoots, err := hb.dataBox.Latest()
 	if err != nil {
@@ -36,7 +32,7 @@ func (hb *hootBox) viewHoot(w http.ResponseWriter, r *http.Request) {
 	path := strings.ToLower(vars["path"])
 	if path == "h" {
 		//try convert id query to int type
-		id, err := strconv.Atoi(r.URL.Query().Get("id"))
+		id, err := strconv.Atoi(vars["id"])
 		if err != nil || id < 1 {
 			hb.notFoundErr(w)
 			return
@@ -63,16 +59,24 @@ func (hb *hootBox) viewHoot(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// handler to parse form for creatingHoot
 func (hb *hootBox) createHoot(w http.ResponseWriter, r *http.Request) {
 	//match all H/h routes with  path variable
 	vars := mux.Vars(r)
 	path := strings.ToLower(vars["path"])
 	if path == "h" {
-		if r.Method != http.MethodPost {
-			w.Header().Set("Allow", http.MethodPost)
-			hb.clientErr(w, http.StatusMethodNotAllowed)
-			return
-		}
+		w.Write([]byte("Display form for collecting data"))
+	} else {
+		hb.notFoundErr(w)
+	}
+}
+
+// handler for creating new hoot
+func (hb *hootBox) postHoot(w http.ResponseWriter, r *http.Request) {
+	//match all H/h routes with  path variable
+	vars := mux.Vars(r)
+	path := strings.ToLower(vars["path"])
+	if path == "h" {
 		title := "Time Traveler"
 		content := "O Man\nTraverse these path of Infiniteness,\nBut slowly, slowly!\n\n– Drunk Man"
 		expires := 7
@@ -82,7 +86,7 @@ func (hb *hootBox) createHoot(w http.ResponseWriter, r *http.Request) {
 			hb.serverErr(w, err)
 			return
 		}
-		http.Redirect(w, r, fmt.Sprintf("/H/view?id=%d", id), http.StatusSeeOther)
+		http.Redirect(w, r, fmt.Sprintf("/H/view/%d", id), http.StatusSeeOther)
 	} else {
 		hb.notFoundErr(w)
 	}

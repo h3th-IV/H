@@ -1,5 +1,6 @@
 package main
 
+//TODO remove year from base page
 import (
 	"bytes"
 	"fmt"
