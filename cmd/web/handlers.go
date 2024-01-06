@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/h3th-IV/H/internal/models"
 )
 
@@ -23,68 +25,68 @@ func (hb *hootBox) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, hoot := range hoots {
-		fmt.Fprintf(w, "%+v\n\n", hoot)
-	}
-	// Use the template.ParseFiles() function to read the template(html)
-	//file into a template set
-
-	// files := []string{
-	// 	"./ui/html/base.tmpl",
-	// 	"./ui/html/partials/nav.tmpl",
-	// 	"./ui/html/pages/home.tmpl",
-	// }
-	// ts, err := template.ParseFiles(files...)
-	// if err != nil {
-	// 	hb.serverErr(w, err)
-	// 	return
-	// }
-	// // Use the ExecuteTemplate() method to write the content of the "base"
-	// // template as the response body.
-	// err = ts.ExecuteTemplate(w, "base", nil)
-	// if err != nil {
-	// 	hb.serverErr(w, err)
-	// }
+	data := hb.newTemplateData(r)
+	data.Hoots = hoots
+	hb.render(w, http.StatusOK, "home.tmpl", data)
 
 }
 
 func (hb *hootBox) viewHoot(w http.ResponseWriter, r *http.Request) {
-	//try convert id query to int type
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil || id < 1 {
+	vars := mux.Vars(r)
+	path := strings.ToLower(vars["path"])
+	if path == "h" {
+		//try convert id query to int type
+		id, err := strconv.Atoi(r.URL.Query().Get("id"))
+		if err != nil || id < 1 {
+			hb.notFoundErr(w)
+			return
+		}
+
+		//get chat with id
+		hoot, err := hb.dataBox.Get(id)
+		if err != nil {
+			if errors.Is(err, models.ErrNoRecord) {
+				hb.notFoundErr(w)
+			} else {
+				hb.serverErr(w, err)
+			}
+			return
+		}
+
+		data := hb.newTemplateData(r)
+		data.Hoot = hoot
+
+		hb.render(w, http.StatusOK, "view.tmpl", data)
+	} else {
 		hb.notFoundErr(w)
-		return
 	}
 
-	//get chat with id
-	hoot, err := hb.dataBox.Get(id)
-	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			hb.notFoundErr(w)
-		} else {
-			hb.serverErr(w, err)
-		}
-		return
-	}
-	fmt.Fprintf(w, "%+v", hoot) //use + in %+v to include field names
 }
 
 func (hb *hootBox) createHoot(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", http.MethodPost)
-		hb.clientErr(w, http.StatusMethodNotAllowed)
-		return
-	}
-	title := "Time Traveler"
-	content := "O Man\nTraverse these path of Infiniteness,\nBut slowly, slowly!\n\n– Drunk Man"
-	expires := 7
+	//match all H/h routes with  path variable
+	vars := mux.Vars(r)
+	path := strings.ToLower(vars["path"])
+	if path == "h" {
+		if r.Method != http.MethodPost {
+			w.Header().Set("Allow", http.MethodPost)
+			hb.clientErr(w, http.StatusMethodNotAllowed)
+			return
+		}
+		title := "Time Traveler"
+		content := "O Man\nTraverse these path of Infiniteness,\nBut slowly, slowly!\n\n– Drunk Man"
+		expires := 7
 
-	id, err := hb.dataBox.Insert(title, content, expires)
-	if err != nil {
-		hb.serverErr(w, err)
-		return
+		id, err := hb.dataBox.Insert(title, content, expires)
+		if err != nil {
+			hb.serverErr(w, err)
+			return
+		}
+		http.Redirect(w, r, fmt.Sprintf("/H/view?id=%d", id), http.StatusSeeOther)
+	} else {
+		hb.notFoundErr(w)
 	}
-	http.Redirect(w, r, fmt.Sprintf("/H/view?id=%d", id), http.StatusSeeOther)
+
 }
 
 // func directoryHandler(w http.ResponseWriter, r *http.Request) {

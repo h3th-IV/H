@@ -3,5 +3,22 @@
 
 {{define "main"}}
     <h2>Latest h00ts</h2>
-    <p>There's nothing to see here yet!</p>
+    {{if .Hoots}}
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Created</th>
+            <th>ID</th>
+        </tr>
+        {{range .Hoots}}
+        <tr>
+            <td><a href='/H/view?id={{.ID}}'>{{.Title}}</a></td>
+            <td>{{humanDate .Created}}</td>
+            <td>#{{.ID}}</td>
+        </tr>
+        {{end}}
+    </table>
+    {{else}}
+        <p>There's Nothing to see here...yet!</p>
+    {{end}}
 {{end}}

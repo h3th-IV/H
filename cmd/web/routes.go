@@ -42,8 +42,8 @@ func (hb *hootBox) routes() *mux.Router {
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileserver))
 
 	router.HandleFunc("/", hb.home)
-	router.HandleFunc("/H/create", hb.createHoot)
-	router.HandleFunc("/H/view", hb.viewHoot)
+	router.HandleFunc("/{path:[Hh]}/create", hb.createHoot)
+	router.HandleFunc("/{path:[Hh]}/view", hb.viewHoot)
 
 	return router
 }

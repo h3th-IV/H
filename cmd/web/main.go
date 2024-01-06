@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -11,9 +12,10 @@ import (
 )
 
 type hootBox struct {
-	infolog *log.Logger
-	errlog  *log.Logger
-	dataBox *models.HootsModel
+	infolog       *log.Logger
+	errlog        *log.Logger
+	dataBox       *models.HootsModel
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -31,10 +33,15 @@ func main() {
 	if err != nil {
 		ErrorLog.Printf("%v", err)
 	}
+	cacheFiles, err := newTemplateCache()
+	if err != nil {
+		ErrorLog.Printf("Err Parsing template files")
+	}
 	owl := &hootBox{
-		infolog: InfoLog,
-		errlog:  ErrorLog,
-		dataBox: &models.HootsModel{DB: dB},
+		infolog:       InfoLog,
+		errlog:        ErrorLog,
+		dataBox:       &models.HootsModel{DB: dB},
+		templateCache: cacheFiles,
 	}
 
 	defer owl.dataBox.DB.Close()
