@@ -3,6 +3,7 @@ package main
 //TODO remove year from base page
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/go-playground/form/v4"
 	"github.com/h3th-IV/H/internal/models"
 )
 
@@ -39,6 +41,7 @@ type templateData struct {
 	Hoot        *models.Hoot
 	Hoots       []*models.Hoot
 	CurrentYear int
+	Form        any
 }
 
 func (hb *hootBox) newTemplateData(r *http.Request) *templateData {
@@ -126,4 +129,24 @@ func (hb *hootBox) render(w http.ResponseWriter, status int, page string, data *
 	//then write from buffer to
 	buffer.WriteTo(w)
 
+}
+
+// decodePostForm() help to decode html.dst,is the target destination
+// that we want to decode the form data into.
+func (hb *hootBox) decodePostForm(r *http.Request, dst any) error {
+	err := r.ParseForm()
+	if err != nil {
+		return err
+	}
+
+	err = hb.formDecoder.Decode(dst, r.PostForm)
+	if err != nil {
+		var invalidDecoderErr *form.InvalidDecoderError
+
+		if errors.As(err, &invalidDecoderErr) {
+			panic(err)
+		}
+		return err
+	}
+	return nil
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/go-playground/form/v4"
 	"github.com/h3th-IV/H/internal/models"
 	"github.com/joho/godotenv"
 )
@@ -16,6 +17,7 @@ type hootBox struct {
 	errlog        *log.Logger
 	dataBox       *models.HootsModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func main() {
@@ -37,11 +39,14 @@ func main() {
 	if err != nil {
 		ErrorLog.Printf("Err Parsing template files")
 	}
+
+	formDecoder := form.NewDecoder()
 	owl := &hootBox{
 		infolog:       InfoLog,
 		errlog:        ErrorLog,
 		dataBox:       &models.HootsModel{DB: dB},
 		templateCache: cacheFiles,
+		formDecoder:   formDecoder,
 	}
 
 	defer owl.dataBox.DB.Close()

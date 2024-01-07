@@ -45,7 +45,7 @@ func (hb *hootBox) routes() *mux.Router {
 
 	router.HandleFunc("/", hb.home)
 	router.HandleFunc("/{path:[Hh]}/create", hb.createHoot).Methods(http.MethodGet)
-	router.HandleFunc("/{path: [Hh]}/create", hb.postHoot).Methods(http.MethodPost)
+	router.HandleFunc("/{path:[Hh]}/create", hb.postHoot).Methods(http.MethodPost)
 	router.HandleFunc("/{path:[Hh]}/view/{id:[0-9]+}", hb.viewHoot).Methods(http.MethodGet)
 
 	//set the middlewares chained togeter with alice
