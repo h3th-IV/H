@@ -43,10 +43,19 @@ func (hb *hootBox) routes() *mux.Router {
 	fileserver := http.FileServer(neuteredFileSystem{fs: http.Dir("./ui/static/")})
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileserver))
 
-	router.HandleFunc("/", hb.home)
-	router.HandleFunc("/{path:[Hh]}/create", hb.createHoot).Methods(http.MethodGet)
-	router.HandleFunc("/{path:[Hh]}/create", hb.postHoot).Methods(http.MethodPost)
-	router.HandleFunc("/{path:[Hh]}/view/{id:[0-9]+}", hb.viewHoot).Methods(http.MethodGet)
+	//create a dynamic middlware chain to monitor sessions for specific routes
+	dynamicMWchain := alice.New(hb.sessionManager.LoadAndSave)
+
+	//use the dynamic chain for the routes
+	router.Handle("/", dynamicMWchain.ThenFunc(hb.home))
+	router.Handle("/hoot/create", dynamicMWchain.ThenFunc(hb.createHoot)).Methods(http.MethodGet)
+	router.Handle("/hoot/create", dynamicMWchain.ThenFunc(hb.postHoot)).Methods(http.MethodPost)
+	router.Handle("/hoot/view/{id:[0-9]+}", dynamicMWchain.ThenFunc(hb.viewHoot)).Methods(http.MethodGet)
+	router.Handle("/user/signup", dynamicMWchain.ThenFunc(hb.signUp)).Methods(http.MethodGet)
+	router.Handle("/user/signup", dynamicMWchain.ThenFunc(hb.postSignUp)).Methods(http.MethodPost)
+	router.Handle("/user/login", dynamicMWchain.ThenFunc(hb.logIn)).Methods(http.MethodGet)
+	router.Handle("/user/login", dynamicMWchain.ThenFunc(hb.postLogIn)).Methods(http.MethodPost)
+	router.Handle("/user/logout", dynamicMWchain.ThenFunc(hb.logOut)).Methods(http.MethodPost)
 
 	//set the middlewares chained togeter with alice
 	middlewareChain := alice.New(hb.recoverPanic, hb.requestLogger, secureHaedersMW)

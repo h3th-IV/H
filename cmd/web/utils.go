@@ -42,11 +42,14 @@ type templateData struct {
 	Hoots       []*models.Hoot
 	CurrentYear int
 	Form        any
+	Flash       string
 }
 
+// template data for things that will be displayed on evry page like date, userDP and stuff
 func (hb *hootBox) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
 		CurrentYear: time.Now().Year(),
+		Flash:       hb.sessionManager.PopString(r.Context(), "flash"),
 	}
 }
 
@@ -142,7 +145,7 @@ func (hb *hootBox) decodePostForm(r *http.Request, dst any) error {
 	err = hb.formDecoder.Decode(dst, r.PostForm)
 	if err != nil {
 		var invalidDecoderErr *form.InvalidDecoderError
-
+		//if err matches invalidDecoderErr
 		if errors.As(err, &invalidDecoderErr) {
 			panic(err)
 		}

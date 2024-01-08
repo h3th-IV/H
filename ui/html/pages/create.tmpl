@@ -1,7 +1,7 @@
 {{define "title"}}Create a New Hoot{{end}}
 
 {{define "main"}}
-<form action='/H/create' method='POST'>
+<form action='/hoot/create' method='POST'>
     <div>
         <label>Title:</label>
         {{with .Form.FieldErrors.title}}
