@@ -23,6 +23,7 @@ type hootBox struct {
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
+	users          *models.UserModels
 }
 
 func main() {
@@ -60,6 +61,7 @@ func main() {
 		templateCache:  cacheFiles,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+		users:          &models.UserModels{DB: dB},
 	}
 
 	defer owl.dataBox.DB.Close()

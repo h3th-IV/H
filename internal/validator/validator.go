@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -56,3 +57,5 @@ func PermittedInt(value int, permittedValues ...int) bool {
 	}
 	return false
 }
+
+var EmailValidator = regexp.

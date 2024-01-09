@@ -122,35 +122,18 @@ func (hb *hootBox) postHoot(w http.ResponseWriter, r *http.Request) {
 // 	http.ServeFile(w, r, path)
 // }
 
-/*
-GET   -/user/signup
-		userSignup
-		Display a HTML form for signing up a new user
-
-
-POST 	-/user/signup
-		userSignupPost
-		Create a new user
-
-
-GET		-/user/login
- 		userLogin
- 		Display a HTML form for logging in a user
-
-
-POST	-/user/login
-		userLoginPost
-		Authenticate and login the user
-
-
-POST	-/user/logout
-		userLogoutPost
-		Logout the user
-*/
+type userSignupForm struct {
+	Name                string `form:"name"`
+	Email               string `form:"email"`
+	Password            string `form:"password"`
+	validator.Validator `form:"-"`
+}
 
 // SignUpForm Handler
 func (hb *hootBox) signUp(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "PLease Provide your Details to signup")
+	data := hb.newTemplateData(r)
+	data.Form = userSignupForm{}
+	hb.render(w, http.StatusOK, "signup.tmpl", data)
 }
 
 // Post signUp data
@@ -170,5 +153,5 @@ func (hb *hootBox) postLogIn(w http.ResponseWriter, r *http.Request) {
 
 // Logout
 func (hb *hootBox) logOut(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Login SUccesfull")
+	fmt.Fprintln(w, "LogOut Succesfull")
 }
