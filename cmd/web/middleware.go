@@ -32,7 +32,7 @@ func (hb *hootBox) requestLogger(next http.Handler) http.Handler {
 	})
 }
 
-// middleware to handle errors incse of panic
+// middleware to handle errors incase of panic
 func (hb *hootBox) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// deferred function (will run in the event of a panic).

@@ -2,7 +2,11 @@ package models
 
 import (
 	"database/sql"
+	"errors"
+	"strings"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // user modell
@@ -21,7 +25,40 @@ type UserModels struct {
 
 // create new user here
 func (um *UserModels) Insert(name, email, password string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	if err != nil {
+		return err
+	}
+
+	query := `INSERT INTO users(name, email, hashed_password, created) VALUES(?, ?, ?, UTC_TIMESTAMP()) `
+	//create dB transacions
+	trx, err := um.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer trx.Rollback()
+
+	//statement
+	stmt, err := trx.Prepare(query)
+	if err != nil {
+		return err
+	}
+
+	//execute statement
+	_, err = stmt.Exec(name, email, string(hash))
+	if err != nil {
+		//check if err is a mysql error type
+		if errors.As(err, &MySQLErr) {
+			//check if error is existing credentials (not unique) with the constraint 'users_uc_email'
+			if MySQLErr.Number == 1062 && strings.Contains(MySQLErr.Message, "users_uc_email") {
+				return ErrExsistingCrednetials
+			}
+		}
+		return err
+	}
+	trx.Commit()
 	return nil
+
 }
 
 // authenticate user if the if email match password
@@ -32,4 +69,23 @@ func (um *UserModels) Authenticate(email, password string) (int, error) {
 // to check is a user with particular ID exist
 func (um *UserModels) Exists(id int) (bool, error) {
 	return false, nil
+}
+
+func (um *UserModels) CheckEmail(email string) bool {
+	query := `SELECT * FROM users WHERE email = ?`
+
+	//use transaction pool
+	tx, err := um.DB.Begin()
+	if err != nil {
+		return false
+	}
+	defer tx.Rollback()
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return false
+	}
+
+	row := stmt.QueryRow(email)
+	tx.Commit()
+	return row != nil
 }

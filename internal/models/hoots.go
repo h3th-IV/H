@@ -67,10 +67,10 @@ func (hm *HootsModel) Get(id int) (*Hoot, error) {
 		return nil, err
 	}
 	row := stmt.QueryRow(id) //hm.DB.QueryRow(query, id)
-	//use a new chat to pass value
-	chat := &Hoot{}
-	//scan into corresonding fields in chat(hoot) struct
-	err = row.Scan(&chat.ID, &chat.Title, &chat.Content, &chat.Created, &chat.Expires)
+	//use a new hoot to pass value
+	hoot := &Hoot{}
+	//scan into corresonding fields into hoot struct
+	err = row.Scan(&hoot.ID, &hoot.Title, &hoot.Content, &hoot.Created, &hoot.Expires)
 	if err != nil {
 		//check if error (err)returned is no row errors
 		if errors.Is(err, sql.ErrNoRows) {
@@ -84,7 +84,7 @@ func (hm *HootsModel) Get(id int) (*Hoot, error) {
 	if err != nil {
 		return nil, err
 	}
-	return chat, nil
+	return hoot, nil
 }
 
 func (hm *HootsModel) Latest() ([]*Hoot, error) {

@@ -126,6 +126,7 @@ type userSignupForm struct {
 	Name                string `form:"name"`
 	Email               string `form:"email"`
 	Password            string `form:"password"`
+	UserDB              *models.UserModels
 	validator.Validator `form:"-"`
 }
 
@@ -140,7 +141,7 @@ func (hb *hootBox) signUp(w http.ResponseWriter, r *http.Request) {
 func (hb *hootBox) postSignUp(w http.ResponseWriter, r *http.Request) {
 	var form userSignupForm
 
-	err := hb.decodePostForm(r, form)
+	err := hb.decodePostForm(r, &form)
 	if err != nil {
 		hb.clientErr(w, http.StatusBadRequest)
 		return
@@ -149,7 +150,7 @@ func (hb *hootBox) postSignUp(w http.ResponseWriter, r *http.Request) {
 	//validate form contents
 	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
 	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
-	form.CheckField(validator.ValidateEmail(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.ValidateEmail(form.Email), "email", "This field must be a valid email address")
 	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
 	form.CheckField(validator.MinChars(form.Password, 8), "password", "This field must be 8 characters long")
 
@@ -158,12 +159,28 @@ func (hb *hootBox) postSignUp(w http.ResponseWriter, r *http.Request) {
 	if !form.Valid() {
 		data := hb.newTemplateData(r)
 		data.Form = form
-		hb.render(w, http.StatusUnprocessableEntity, "sign.tmpl", data)
+		hb.render(w, http.StatusUnprocessableEntity, "signup.tmpl", data)
 		return
 	}
 
-	//Create user in db
-	fmt.Fprintln(w, "SignUp Succesfull")
+	//create new user in dB
+	err = hb.users.Insert(form.Name, form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrExsistingCrednetials) {
+			form.AddFieldError("email", "Email has already been taken.")
+
+			data := hb.newTemplateData(r)
+			data.Form = form
+			hb.render(w, http.StatusUnprocessableEntity, "signup.tmpl", data)
+		} else {
+			hb.serverErr(w, err)
+		}
+		return
+	}
+	//flash account creation succesfull
+	hb.sessionManager.Put(r.Context(), "flash", "Account Succesfully Created. Proceed to Login")
+	//redirect to login page
+	http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 }
 
 // Login form Handler

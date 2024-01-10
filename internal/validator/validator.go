@@ -9,12 +9,13 @@ import (
 // Define a new Validator type which contains a map of validation errors for our
 // form fields.
 type Validator struct {
-	FieldErrors map[string]string
+	NonFieldErrors []string
+	FieldErrors    map[string]string
 }
 
 // return true if the FieldErrors map doesn't contain any entries.
 func (v *Validator) Valid() bool {
-	return len(v.FieldErrors) == 0
+	return len(v.FieldErrors) == 0 && len(v.NonFieldErrors) == 0
 }
 
 // add an error message to the FieldErrors map (so long as no
@@ -30,12 +31,19 @@ func (v *Validator) AddFieldError(key, message string) {
 	}
 }
 
+// function for non field errors
+func (v *Validator) AddNonFieldError(message string) {
+	v.NonFieldErrors = append(v.NonFieldErrors, message)
+}
+
 // add an error message to the FieldErrors map only if a
 // validation check is not 'ok'.
-func (v *Validator) CheckField(ok bool, key, message string) {
+func (v *Validator) CheckField(ok bool, key, message string) bool {
 	if !ok {
 		v.AddFieldError(key, message)
+		return true
 	}
+	return false
 }
 
 // return true if a value is not an empty string.
