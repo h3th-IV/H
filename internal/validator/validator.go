@@ -58,4 +58,13 @@ func PermittedInt(value int, permittedValues ...int) bool {
 	return false
 }
 
-var EmailValidator = regexp.
+// ensure that email follows userMiile45@email.com
+func ValidateEmail(email string) bool {
+	Checker, _ := regexp.Compile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	return Checker.MatchString(email)
+}
+
+// helper to check user does not ibput empty string
+func MinChars(value string, n int) bool {
+	return utf8.RuneCountInString(value) >= n
+}

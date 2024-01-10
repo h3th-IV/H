@@ -138,6 +138,31 @@ func (hb *hootBox) signUp(w http.ResponseWriter, r *http.Request) {
 
 // Post signUp data
 func (hb *hootBox) postSignUp(w http.ResponseWriter, r *http.Request) {
+	var form userSignupForm
+
+	err := hb.decodePostForm(r, form)
+	if err != nil {
+		hb.clientErr(w, http.StatusBadRequest)
+		return
+	}
+
+	//validate form contents
+	form.CheckField(validator.NotBlank(form.Name), "name", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.ValidateEmail(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+	form.CheckField(validator.MinChars(form.Password, 8), "password", "This field must be 8 characters long")
+
+	//check for erros whn validating form fields
+	//if errors such as incorrect user input, render sign up form again
+	if !form.Valid() {
+		data := hb.newTemplateData(r)
+		data.Form = form
+		hb.render(w, http.StatusUnprocessableEntity, "sign.tmpl", data)
+		return
+	}
+
+	//Create user in db
 	fmt.Fprintln(w, "SignUp Succesfull")
 }
 

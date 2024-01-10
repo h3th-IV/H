@@ -134,7 +134,7 @@ func (hb *hootBox) render(w http.ResponseWriter, status int, page string, data *
 
 }
 
-// decodePostForm() help to decode html.dst,is the target destination
+// decodePostForm() help to decode html dst,is the target destination
 // that we want to decode the form data into.
 func (hb *hootBox) decodePostForm(r *http.Request, dst any) error {
 	err := r.ParseForm()
