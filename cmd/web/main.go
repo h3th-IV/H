@@ -4,7 +4,6 @@ package main
 import (
 	"crypto/tls"
 	"flag"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -16,16 +15,6 @@ import (
 	"github.com/h3th-IV/H/internal/models"
 	"github.com/joho/godotenv"
 )
-
-type hootBox struct {
-	infolog        *log.Logger
-	errlog         *log.Logger
-	dataBox        *models.HootsModel
-	templateCache  map[string]*template.Template
-	formDecoder    *form.Decoder
-	sessionManager *scs.SessionManager
-	users          *models.UserModels
-}
 
 func main() {
 	//logger for wrting informational message

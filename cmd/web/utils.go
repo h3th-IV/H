@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/go-playground/form/v4"
-	"github.com/h3th-IV/H/internal/models"
 )
 
 // write error err and stack trace  to the errlog attribute,
@@ -34,15 +33,6 @@ func (hb *hootBox) clientErr(w http.ResponseWriter, status int) {
 // 404-like responses  to user
 func (hb *hootBox) notFoundErr(w http.ResponseWriter) {
 	hb.clientErr(w, http.StatusNotFound)
-}
-
-// template data to be rendered
-type templateData struct {
-	Hoot        *models.Hoot
-	Hoots       []*models.Hoot
-	CurrentYear int
-	Form        any
-	Flash       string
 }
 
 // template data for things that will be displayed on evry page like date, userDP and stuff
@@ -152,4 +142,9 @@ func (hb *hootBox) decodePostForm(r *http.Request, dst any) error {
 		return err
 	}
 	return nil
+}
+
+// func to check if user session exist, i.e user is logged in
+func (hb *hootBox) isAuthenticate(r *http.Request) bool {
+	return hb.sessionManager.Exists(r.Context(), "authenticatedID")
 }

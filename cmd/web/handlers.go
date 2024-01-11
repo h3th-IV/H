@@ -27,6 +27,7 @@ func (hb *hootBox) home(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// Handler r viewing hoot with particular ID
 func (hb *hootBox) viewHoot(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 
@@ -65,13 +66,6 @@ func (hb *hootBox) createHoot(w http.ResponseWriter, r *http.Request) {
 	}
 	hb.render(w, http.StatusOK, "create.tmpl", data)
 
-}
-
-type hootCreateForm struct {
-	Title               string     `form:"title"`
-	Content             string     `form:"content"`
-	Expires             int        `form:"expires"`
-	validator.Validator `form:"-"` //"-" will be ignored when decoding
 }
 
 // handler for creating new hoot
@@ -121,14 +115,6 @@ func (hb *hootBox) postHoot(w http.ResponseWriter, r *http.Request) {
 // 	}
 // 	http.ServeFile(w, r, path)
 // }
-
-type userSignupForm struct {
-	Name                string `form:"name"`
-	Email               string `form:"email"`
-	Password            string `form:"password"`
-	UserDB              *models.UserModels
-	validator.Validator `form:"-"`
-}
 
 // SignUpForm Handler
 func (hb *hootBox) signUp(w http.ResponseWriter, r *http.Request) {
@@ -185,15 +171,68 @@ func (hb *hootBox) postSignUp(w http.ResponseWriter, r *http.Request) {
 
 // Login form Handler
 func (hb *hootBox) logIn(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "PLease Provide your Details to Login")
+	data := hb.newTemplateData(r)
+	data.Form = Login{}
+	hb.render(w, http.StatusOK, "login.tmpl", data)
 }
 
 // Post Login data
 func (hb *hootBox) postLogIn(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "LogIn Successfull")
+	//use form to decode login data
+	var form Login
+
+	err := hb.decodePostForm(r, &form)
+	if err != nil {
+		hb.clientErr(w, http.StatusBadRequest)
+	}
+
+	//validate all form inut
+	form.CheckField(validator.NotBlank(form.Email), "email", "This field cannot be blank")
+	form.CheckField(validator.ValidateEmail(form.Email), "email", "This field must contain a valid email address")
+	form.CheckField(validator.NotBlank(form.Password), "password", "This field cannot be blank")
+
+	if !form.Valid() {
+		data := hb.newTemplateData(r)
+		data.Form = form
+		hb.render(w, http.StatusUnprocessableEntity, "login.tmpl", data)
+		return
+	}
+
+	//check if user credentails match
+	id, err := hb.users.Authenticate(form.Email, form.Password)
+	if err != nil {
+		if errors.Is(err, models.ErrInvalidCredentials) {
+			form.AddNonFieldError("Email or psssword is incorrect")
+
+			data := hb.newTemplateData(r)
+			data.Form = form
+			hb.render(w, http.StatusUnprocessableEntity, "login.tmpl", data)
+		} else {
+			hb.serverErr(w, err)
+		}
+		return
+	}
+
+	//generate new sessdion ID for the User after login (good pratice)
+	hb.sessionManager.Put(r.Context(), "authenticatedUSerID", id)
+
+	//rdirect to new page
+	http.Redirect(w, r, "/hoot/create", http.StatusSeeOther)
+
 }
 
 // Logout
 func (hb *hootBox) logOut(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "LogOut Succesfull")
+	//renew session token
+	err := hb.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		hb.serverErr(w, err)
+		return
+	}
+
+	//remove sesion ID for loged out user
+	hb.sessionManager.Remove(r.Context(), "authenticatedUserID")
+
+	//flash notifcation to let user to log out successfully
+	hb.sessionManager.Put(r.Context(), "flash", "logOut Successfully")
 }

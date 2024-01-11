@@ -8,10 +8,7 @@ import (
 	"github.com/justinas/alice"
 )
 
-type neuteredFileSystem struct {
-	fs http.FileSystem
-}
-
+// check if request is a directory
 func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	httpFile, err := nfs.fs.Open(path)
 	if err != nil {

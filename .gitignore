@@ -1,3 +1,4 @@
 /internal/init.sql
 .env
 tls/
+test

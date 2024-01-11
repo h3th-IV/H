@@ -63,7 +63,44 @@ func (um *UserModels) Insert(name, email, password string) error {
 
 // authenticate user if the if email match password
 func (um *UserModels) Authenticate(email, password string) (int, error) {
-	return 0, nil
+	//retrieve user from DB if their email exist
+	query := `SELECT id, hashed_password FROM users WHERE email = ?`
+	tx, err := um.DB.Begin()
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare(query)
+	if err != nil {
+		return 0, err
+	}
+
+	user := User{}
+	row := stmt.QueryRow(email)
+	err = row.Scan(&user.ID, &user.HashedPassowrd)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+
+	//check whether plain text password matches retrieved hash
+	err = bcrypt.CompareHashAndPassword(user.HashedPassowrd, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return 0, ErrInvalidCredentials
+		} else {
+			return 0, err
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return 0, err
+	}
+	return user.ID, nil
 }
 
 // to check is a user with particular ID exist
