@@ -172,18 +172,19 @@ func (hb *hootBox) postSignUp(w http.ResponseWriter, r *http.Request) {
 // Login form Handler
 func (hb *hootBox) logIn(w http.ResponseWriter, r *http.Request) {
 	data := hb.newTemplateData(r)
-	data.Form = Login{}
+	data.Form = LoginForm{}
 	hb.render(w, http.StatusOK, "login.tmpl", data)
 }
 
 // Post Login data
 func (hb *hootBox) postLogIn(w http.ResponseWriter, r *http.Request) {
 	//use form to decode login data
-	var form Login
+	var form LoginForm
 
 	err := hb.decodePostForm(r, &form)
 	if err != nil {
 		hb.clientErr(w, http.StatusBadRequest)
+		return
 	}
 
 	//validate all form inut
@@ -214,7 +215,13 @@ func (hb *hootBox) postLogIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//generate new sessdion ID for the User after login (good pratice)
-	hb.sessionManager.Put(r.Context(), "authenticatedUSerID", id)
+	err = hb.sessionManager.RenewToken(r.Context())
+	if err != nil {
+		hb.serverErr(w, err)
+		return
+	}
+	//add the user ID to the session so they remain loged In
+	hb.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 
 	//rdirect to new page
 	http.Redirect(w, r, "/hoot/create", http.StatusSeeOther)
@@ -235,4 +242,6 @@ func (hb *hootBox) logOut(w http.ResponseWriter, r *http.Request) {
 
 	//flash notifcation to let user to log out successfully
 	hb.sessionManager.Put(r.Context(), "flash", "logOut Successfully")
+	//redirect to home page
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

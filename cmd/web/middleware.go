@@ -1,8 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/justinas/nosurf"
 )
 
 // middlerware to set security headers for all routes
@@ -46,6 +49,60 @@ func (hb *hootBox) recoverPanic(next http.Handler) http.Handler {
 			}
 		}() //just like anormal defer line --> defer funcName()
 
+		next.ServeHTTP(w, r)
+	})
+}
+
+// middleware to prevents access to routes that require auth
+func (hb *hootBox) requireAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//cehck if user session is logedIn
+		if !hb.isAuthenticate(r) {
+			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+			return
+		}
+
+		// Otherwise set the "Cache-Control: no-store" header so that pages
+		// require authentication are not stored in the cache
+		w.Header().Set("Cache-Control", "no-store")
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// func to mitigate CSRF request
+func noCSRF(next http.Handler) http.Handler {
+	csrfHandler := nosurf.New(next)
+	csrfHandler.SetBaseCookie(http.Cookie{
+		HttpOnly: true,
+		Path:     "/",
+		Secure:   true,
+	})
+	return csrfHandler
+}
+
+// middleware to
+func (hb *hootBox) authUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//retrieve the authenticatedUserID from the session
+		id := hb.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+		if id == 0 {
+			next.ServeHTTP(w, r)
+			return
+		}
+		//check if the user Exist in the database with the provided ID
+		exists, err := hb.users.Exists(id)
+		if err != nil {
+			hb.serverErr(w, err)
+			return
+		}
+		//if user exists, this means request is coming from users that exists in the DB
+		//make a copy of the request(with isAuthenticatedContextKey set to true --
+		//which shows user is uthenticated)
+		if exists {
+			ctx := context.WithValue(r.Context(), isAuthenticatedcontextKey, true)
+			r = r.WithContext(ctx)
+		}
 		next.ServeHTTP(w, r)
 	})
 }

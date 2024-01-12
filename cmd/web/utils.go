@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/go-playground/form/v4"
+	"github.com/justinas/nosurf"
 )
 
 // write error err and stack trace  to the errlog attribute,
@@ -38,8 +39,10 @@ func (hb *hootBox) notFoundErr(w http.ResponseWriter) {
 // template data for things that will be displayed on evry page like date, userDP and stuff
 func (hb *hootBox) newTemplateData(r *http.Request) *templateData {
 	return &templateData{
-		CurrentYear: time.Now().Year(),
-		Flash:       hb.sessionManager.PopString(r.Context(), "flash"),
+		CurrentYear:     time.Now().Year(),
+		Flash:           hb.sessionManager.PopString(r.Context(), "flash"),
+		IsAuthenticated: hb.isAuthenticate(r),
+		XsRfToken:       nosurf.Token(r),
 	}
 }
 
@@ -146,5 +149,9 @@ func (hb *hootBox) decodePostForm(r *http.Request, dst any) error {
 
 // func to check if user session exist, i.e user is logged in
 func (hb *hootBox) isAuthenticate(r *http.Request) bool {
-	return hb.sessionManager.Exists(r.Context(), "authenticatedID")
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedcontextKey).(bool)
+	if !ok {
+		return false
+	}
+	return isAuthenticated
 }

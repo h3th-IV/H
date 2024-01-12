@@ -35,6 +35,7 @@ type templateData struct {
 	Form            any
 	Flash           string
 	IsAuthenticated bool
+	XsRfToken       string
 }
 
 // new hoot form
@@ -55,7 +56,7 @@ type userSignupForm struct {
 }
 
 // login form
-type Login struct {
+type LoginForm struct {
 	Email               string `form:"email"`
 	Password            string `form:"password"`
 	validator.Validator `form:"-"`

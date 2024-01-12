@@ -61,6 +61,15 @@ func (um *UserModels) Insert(name, email, password string) error {
 
 }
 
+// check if a user exist in the DB
+func (um *UserModels) Exists(id int) (bool, error) {
+	var exists bool
+
+	query := `SELECT EXISTS(SELECT true FROM users WHERE id = ?)`
+	err := um.DB.QueryRow(query, id).Scan(&exists)
+	return exists, err
+}
+
 // authenticate user if the if email match password
 func (um *UserModels) Authenticate(email, password string) (int, error) {
 	//retrieve user from DB if their email exist
@@ -101,11 +110,6 @@ func (um *UserModels) Authenticate(email, password string) (int, error) {
 		return 0, err
 	}
 	return user.ID, nil
-}
-
-// to check is a user with particular ID exist
-func (um *UserModels) Exists(id int) (bool, error) {
-	return false, nil
 }
 
 func (um *UserModels) CheckEmail(email string) bool {
