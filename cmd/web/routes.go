@@ -39,6 +39,7 @@ func (hb *hootBox) routes() *mux.Router {
 	//serve static files
 	fileserver := http.FileServer(neuteredFileSystem{fs: http.Dir("./ui/static/")})
 	router.PathPrefix("/static/").Handler(http.StripPrefix("/static/", fileserver))
+	//router.Handle("/static/*filepath", fileserver).Methods(http.MethodGet)
 
 	//create a dynamic middlware chain to monitor sessions for specific routes
 	dynamicMWchain := alice.New(hb.sessionManager.LoadAndSave, noCSRF, hb.authUser)
