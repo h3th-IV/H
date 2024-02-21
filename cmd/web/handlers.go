@@ -203,7 +203,7 @@ func (hb *hootBox) postLogIn(w http.ResponseWriter, r *http.Request) {
 	id, err := hb.users.Authenticate(form.Email, form.Password)
 	if err != nil {
 		if errors.Is(err, models.ErrInvalidCredentials) {
-			form.AddNonFieldError("Email or psssword is incorrect")
+			form.AddNonFieldError("Email or password is incorrect")
 
 			data := hb.newTemplateData(r)
 			data.Form = form
